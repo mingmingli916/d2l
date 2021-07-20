@@ -27,6 +27,24 @@ def evaluate_accuracy(net, data_iter):
     return metric[0] / metric[1]
 
 
+def evaluate_accuracy_gpu(net, data_iter, device=None):
+    """Compute the accuracy for a model on a dataset using GPU"""
+    if isinstance(net, torch.nn.Module):
+        net.eval()
+        if not device:
+            device = next(iter(net.parameters())).device
+    metric = Accumulator(2)
+    with torch.no_grad():
+        for X, y in data_iter:
+            if isinstance(X, list):
+                X = [x.to(device) for x in X]
+            else:
+                X = X.to(device)
+            y = y.to(device)
+            metric.add(accuracy(net(X), y), y.numel())
+    return metric[0] / metric[1]
+
+
 def evaluate_loss(net, data_iter, loss):
     """Evaluate the loss of a model on the given dataset."""
     metric = Accumulator(2)  # Sum of losses, no. of examples
